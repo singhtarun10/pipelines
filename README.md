@@ -5,6 +5,8 @@ A Node.js Web Application (App Service)
 A Containerized Application (Docker → AKS)
 
 🔧 Task 1: Infrastructure Deployment with Terraform
+
+
 ✅ Overview
 Provision the following using Terraform:
 Azure Storage Account
@@ -13,6 +15,8 @@ Azure SQL Database
 Azure Web App
 Azure Kubernetes Service (AKS)
 Azure Container Registry (ACR)
+
+
 ✅ Best Practices
 Each resource has its own reusable module
 Sensitive values stored in Key Vault (e.g., DB password)
@@ -30,6 +34,8 @@ Terraform Init
 Terraform Plan (on all branches)
 Terraform Apply (only on main, gated by approval)
 PR triggers enforced in YAML
+
+
 🚀 Task 2: CI/CD Pipeline Setup
 1. Web App CI/CD
 Pipeline File: azure-pipelines-webapp.yml
@@ -42,12 +48,16 @@ Uses: AzureWebApp@1, zip deployment method
 Startup Command: npm run start
 2. Docker to AKS CI/CD
 Pipeline File: azure-pipelines-aks.yml
+
+
 Stages:
 Build Docker Image & Push to ACR (based on environment)
 Deploy to AKS using kubectl via KubernetesManifest@0
 Multi-environment support via parameters.environment
 ImagePullSecrets created per environment
 Kubernetes Manifests: environment-specific deployments
+
+
 ✅ Pipeline Features
 Azure DevOps multi-stage pipelines
 Environment approvals using Azure DevOps Environments
