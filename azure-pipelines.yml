@@ -1,0 +1,149 @@
+trigger:
+  branches:
+    include:
+      - "*"
+
+pr:
+  branches:
+    include:
+      - main 
+pool:
+  name: Default
+
+stages:
+  - stage: Dev
+    displayName: Dev stage
+    jobs:
+      - job: Build_Infrastructure_for_Dev_stage
+        displayName: Terraform Init, Plan and Apply
+
+        steps:
+          - task: TerraformCLI@2
+            displayName: Terraform Init
+            inputs:
+              command: 'init'
+              commandOptions: '-reconfigure -backend-config="./environment/dev/dev.config"'
+              backendType: 'azurerm'
+              backendServiceArm: 'Azure'
+              allowTelemetryCollection: true
+
+          - task: TerraformTask@5
+            displayName: Terraform Plan
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              commandOptions: '-var-file="./environment/dev/dev.tfvars"'
+              environmentServiceNameAzureRM: 'Azure'
+  
+          - task: TerraformTask@5
+            displayName: Terraform apply
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              commandOptions: '-var-file="./environment/dev/dev.tfvars"'
+              environmentServiceNameAzureRM: 'Azure'
+  
+  - stage: QA
+    displayName: QA Stage
+    dependsOn: Dev
+    condition: succeeded()
+
+    jobs:
+      - job: Build_Infrastructure_for_QA_Stage
+        displayName: Terraform Init, Plan and Apply
+
+        steps:
+          - task: TerraformCLI@2
+            displayName: Terraform Init
+            inputs:
+              command: 'init'
+              commandOptions: '-reconfigure -backend-config="./environment/qa/qa.config"'
+              backendType: 'azurerm'
+              backendServiceArm: 'Azure'
+              allowTelemetryCollection: true
+
+          - task: TerraformTask@5
+            displayName: Terraform Plan
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              commandOptions: '-var-file="./environment/qa/qa.tfvars"'
+              environmentServiceNameAzureRM: 'Azure'
+  
+          - task: TerraformTask@5
+            displayName: Terraform apply
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              commandOptions: '-var-file="./environment/qa/qa.tfvars"'
+              environmentServiceNameAzureRM: 'Azure'
+
+  - stage: Stage
+    displayName: Stage Stage
+    dependsOn: QA
+    condition: succeeded()
+
+    jobs:
+      - job: Build_Infrastructure_for_Stage_Stage
+        displayName: Terraform Init, Plan and Apply
+
+        steps:
+          - task: TerraformCLI@2
+            displayName: Terraform Init
+            inputs:
+              command: 'init'
+              commandOptions: '-reconfigure -backend-config="./environment/stage/stage.config"'
+              backendType: 'azurerm'
+              backendServiceArm: 'Azure'
+              allowTelemetryCollection: true
+
+          - task: TerraformTask@5
+            displayName: Terraform Plan
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              commandOptions: '-var-file="./environment/stage/stage.tfvars"'
+              environmentServiceNameAzureRM: 'Azure'
+  
+          - task: TerraformTask@5
+            displayName: Terraform apply
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              commandOptions: '-var-file="./environment/stage/stage.tfvars"'
+              environmentServiceNameAzureRM: 'Azure'
+
+  - stage: Prod
+    displayName: Prod Stage
+    dependsOn: Stage
+    condition: succeeded()
+
+    jobs:
+      - job: Build_Infrastructure_for_Prod_Stage
+        displayName: Terraform Init, Plan and Apply
+
+        steps:
+          - task: TerraformCLI@2
+            displayName: Terraform Init
+            inputs:
+              command: 'init'
+              commandOptions: '-reconfigure -backend-config="./environment/prod/prod.config"'
+              backendType: 'azurerm'
+              backendServiceArm: 'Azure'
+              allowTelemetryCollection: true
+
+          - task: TerraformTask@5
+            displayName: Terraform Plan
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              commandOptions: '-var-file="./environment/prod/prod.tfvars"'
+              environmentServiceNameAzureRM: 'Azure'
+  
+          - task: TerraformTask@5
+            displayName: Terraform apply
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              commandOptions: '-var-file="./environment/prod/prod.tfvars"'
+              environmentServiceNameAzureRM: 'Azure'
