@@ -1,0 +1,205 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main 
+
+variables:
+
+  
+  azureSubscription: '2bd16606-f53a-4084-8f63-2f15f25f3e78'
+
+    
+  devapp: 'dev-tarun-app'
+  qaapp: 'qa-tarun-app'
+  stageapp: 'stage-tarun-app'
+  prodapp: 'prod-tarun-app'
+
+
+  vmImageName: 'ubuntu-latest'
+ 
+pool:
+  name: Default
+ 
+stages:
+- stage: Dev
+  displayName: Dev stage
+  jobs:
+  - job: Deploy_on_Dev
+    displayName: Deploy Web App on Dev Stage
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '20.x'
+      displayName: 'Install Node.js'
+ 
+    - script: |
+        npm install
+        npm run build --if-present
+        npm run test --if-present
+      displayName: 'npm install, build and test'
+ 
+    - task: ArchiveFiles@2
+      displayName: 'Archive files'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        replaceExistingArchive: true
+   
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Artifact'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        artifact: 'drop'
+        publishLocation: 'pipeline'
+ 
+    - task: AzureWebApp@1
+      displayName: 'Azure Web App Deploy: dev-om-app'
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appType: webAppLinux
+        appName: $(devapp)
+        runtimeStack: 'NODE|20LTS'
+        package: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        startUpCommand: 'npm run start'
+ 
+- stage: QA
+  displayName: QA stage
+  dependsOn: Dev
+  condition: succeeded()
+  jobs:
+  - job: Deploy_on_QA
+    displayName: Deploy Web App on QA Stage
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '20.x'
+      displayName: 'Install Node.js'
+ 
+    - script: |
+        npm install
+        npm run build --if-present
+        npm run test --if-present
+      displayName: 'npm install, build and test'
+ 
+    - task: ArchiveFiles@2
+      displayName: 'Archive files'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        replaceExistingArchive: true
+ 
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Artifact'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        artifact: 'drop1'
+        publishLocation: 'pipeline'
+ 
+    - task: AzureWebApp@1
+      displayName: 'Azure Web App Deploy: qa-om-app'
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appType: webAppLinux
+        appName: $(qaapp)
+        runtimeStack: 'NODE|20LTS'
+        package: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        startUpCommand: 'npm run start'
+ 
+- stage: Stage
+  displayName: Stage stage
+  dependsOn: QA
+  condition: succeeded()
+  jobs:
+  - job: Deploy_on_Stage
+    displayName: Deploy Web App on Stage Stage
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '20.x'
+      displayName: 'Install Node.js'
+ 
+    - script: |
+        npm install
+        npm run build --if-present
+        npm run test --if-present
+      displayName: 'npm install, build and test'
+ 
+    - task: ArchiveFiles@2
+      displayName: 'Archive files'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        replaceExistingArchive: true
+ 
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Artifact'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        artifact: 'drop2'
+        publishLocation: 'pipeline'
+ 
+    - task: AzureWebApp@1
+      displayName: 'Azure Web App Deploy: stage-om-app'
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appType: webAppLinux
+        appName: $(stageapp)
+        runtimeStack: 'NODE|20LTS'
+        package: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        startUpCommand: 'npm run start'
+ 
+- stage: Prod
+  displayName: Prod stage
+  dependsOn: Stage
+  condition: succeeded()
+  jobs:
+  - job: Deploy_on_Prod
+    displayName: Deploy Web App on Prod Stage
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '20.x'
+      displayName: 'Install Node.js'
+ 
+    - script: |
+        npm install
+        npm run build --if-present
+        npm run test --if-present
+      displayName: 'npm install, build and test'
+ 
+    - task: ArchiveFiles@2
+      displayName: 'Archive files'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        replaceExistingArchive: true
+ 
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Artifact'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        artifact: 'drop3'
+        publishLocation: 'pipeline'
+ 
+    - task: AzureWebApp@1
+      displayName: 'Azure Web App Deploy: prod-om-app'
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appType: webAppLinux
+        appName: $(prodapp)
+        runtimeStack: 'NODE|20LTS'
+        package: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        startUpCommand: 'npm run start'

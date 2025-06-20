@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-webapp
+  labels:
+    app: node-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: node-webapp
+  template:
+    metadata:
+      labels:
+        app: node-webapp
+    spec:
+      containers:
+        - name: devops
+          image: devomacr.azurecr.io/devimage:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: SQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: node-webapp-secrets
+                  key: sqladmin
+            - name: SQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: node-webapp-secrets
+                  key: sqlpassword
+            - name: SQL_SERVER
+              valueFrom:
+                secretKeyRef:
+                  name: sql-config-secrets
+                  key: sqlserver
+            - name: SQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: sql-config-secrets
+                  key: sqldatabase
+            - name: SQL_ENCRYPT
+              value: "true"
+          volumeMounts:
+            - name: secrets-store-inline
+              mountPath: /mnt/secrets-store
+              readOnly: true
+      volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: node-webapp-kv-integration
+ 
